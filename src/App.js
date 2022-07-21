@@ -5,37 +5,47 @@ import axios from 'axios';
 
 const socket = io.connect('localhost:8080');
 
-// get user's public IP -> emit to server to check other online user's with same IP
-
-
 const App = () => {
 
-  const [nearby, setNearby] = useState();
+	const [nearby, setNearby] = useState([]);
 
-  useEffect(() => {
-    const connectUser = async () => {
-      const res = await axios.get('https://api.ipify.org/?format=json');
-      const IP = await res.data.ip;
-      const OS = navigator.userAgentData.platform;
-    
-      await socket.emit('connect-ip', {
-        ip: IP,
-        os: OS,
-      });
-    }
-    connectUser();
-  }, [])
+	useEffect(() => {
+		const connectUser = async () => {
+			const res = await axios.get('https://api.ipify.org/?format=json');
+			const IP = await res.data.ip;
+			const OS = navigator.userAgentData.platform;
+			await socket.emit('connect-ip', {
+				ip: IP,
+				os: OS,
+			});
+		}
+		connectUser();
+	}, [])
 
-  socket.on('nearby-users', (nearbyUsers) => {
-    setNearby(nearbyUsers);
-  })
+	socket.on('nearby-users', (nearbyUsers) => {
+		setNearby(nearbyUsers);
+	})
 
-  console.log(nearby);
+	console.log(nearby);
+	console.log('length', nearby.length)
 
-  return (
-    <div className="App">
-    </div>
-  );
+	return (
+		<div className="App">
+			<div className="users-container">
+				{nearby.map((value, key) => {
+					return (
+						<div className="active-users" key={key}>
+							<p>{value.id}</p>
+							<form>
+								<input type="file" />
+								<input type="submit" />
+							</form>
+						</div>
+					)
+				})}
+			</div>
+		</div>
+	);
 }
 
 export default App;
