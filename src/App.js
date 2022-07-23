@@ -2,6 +2,7 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import axios from 'axios';
+import ReceiverIcon from './Components/ReceiverIcon';
 
 const socket = io.connect('localhost:8080');
 
@@ -34,13 +35,7 @@ const App = () => {
 			<div className="users-container">
 				{nearby.map((value, key) => {
 					return (
-						<div className="active-users" key={key}>
-							<p>{value.id}</p>
-							<form>
-								<input type="file" />
-								<input type="submit" />
-							</form>
-						</div>
+						<ReceiverIcon sessionID={value} key={key}/>
 					)
 				})}
 			</div>
