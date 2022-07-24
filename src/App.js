@@ -2,7 +2,7 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import axios from 'axios';
-import ReceiverIcon from './Components/ReceiverIcon';
+import Recipient from './Components/Recipient';
 
 const socket = io.connect('localhost:8080');
 
@@ -27,17 +27,24 @@ const App = () => {
 		setNearby(nearbyUsers);
 	})
 
+	const uploadFile = (file) => {
+		socket.emit('upload-file', file);
+	}
+
 	console.log(nearby);
 	console.log('length', nearby.length)
 
 	return (
 		<div className="App">
-			<div className="users-container">
+			<div className="recipient-container">
 				{nearby.map((value, key) => {
 					return (
-						<ReceiverIcon sessionID={value} key={key}/>
+						<Recipient recipient={value} idx={key} recipientCount={nearby.length} upload={uploadFile}/>
 					)
 				})}
+			</div>
+			<div className="footer-container">
+				<p>You are known as: ...</p>
 			</div>
 		</div>
 	);

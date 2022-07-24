@@ -10,4 +10,33 @@ body {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.hidden {
+  display: none;
+}
+
+.recipient-container {
+  display: flex;
+  justify-content: center;
+}
+
+.active-recipient {
+  padding: 1em;
+}
+.active-recipient .recipient-icon-motion {
+  border-radius: 50%;
+  max-width: 90px;
+}
+
+.footer-container {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  padding-bottom: 3em;
+  text-align: center;
+}
+.footer-container h1 {
+  text-align: center;
 }/*# sourceMappingURL=index.css.map */
