@@ -8,7 +8,6 @@ const getWindowSize = () => {
 }
 
 const ReceiverIcon = (props) => {
-  const [file, setFile] = useState('');
   const [windowSize, setWindowSize] = useState(getWindowSize());
   const chooseFile = useRef()
 
@@ -26,7 +25,7 @@ const ReceiverIcon = (props) => {
 
   console.log(windowSize)
 
-  const submitFile = (e) => {
+  const submitFile = (e, file) => {
     e.preventDefault();
     props.upload(file);
     console.log(`uploaded to ${props.recipient.id}`);
@@ -35,8 +34,7 @@ const ReceiverIcon = (props) => {
   return (
     <div className='active-recipient'>
         <input type="file" ref={chooseFile} className='hidden' onChange={(e) => {
-          setFile(e.target.files[0])
-          submitFile(e)
+          submitFile(e, e.target.files[0])
         }}/>
         <div onClick={() => { chooseFile.current.click() }}>
           <motion.img 

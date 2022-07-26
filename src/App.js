@@ -7,7 +7,7 @@ import Recipient from './Components/Recipient';
 const socket = io.connect('localhost:8080');
 
 const App = () => {
-
+	const [self, setSelf] = useState('');
 	const [nearby, setNearby] = useState([]);
 
 	useEffect(() => {
@@ -23,6 +23,10 @@ const App = () => {
 		connectUser();
 	}, [])
 
+	socket.on('get-self', (self) => {
+		setSelf(self);
+	})
+
 	socket.on('nearby-users', (nearbyUsers) => {
 		setNearby(nearbyUsers);
 	})
@@ -37,14 +41,12 @@ const App = () => {
 	return (
 		<div className="App">
 			<div className="recipient-container">
-				{nearby.map((value, key) => {
-					return (
-						<Recipient recipient={value} idx={key} recipientCount={nearby.length} upload={uploadFile}/>
-					)
+				{nearby.filter((value) => value.id !== self).map((value, key) => {
+					return ( <Recipient recipient={value} idx={key} recipientCount={nearby.length} upload={uploadFile}/> )
 				})}
 			</div>
 			<div className="footer-container">
-				<p>You are known as: ...</p>
+				<p>You are known as: {self.slice(0, 5)}</p>
 			</div>
 		</div>
 	);
