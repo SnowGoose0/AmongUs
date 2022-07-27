@@ -36,7 +36,11 @@ const ReceiverIcon = (props) => {
         <input type="file" ref={chooseFile} className='hidden' onChange={(e) => {
           submitFile(e, e.target.files[0])
         }}/>
-        <div onClick={() => { chooseFile.current.click() }}>
+        <div onClick={() => { 
+          chooseFile.current.click();
+          props.sessionID.current = props.recipient.id;
+          props.connectRTC();
+        }}>
           <motion.img 
             src={recipientIcon}
             className = 'recipient-icon-motion'
