@@ -38,8 +38,6 @@ const ReceiverIcon = (props) => {
         }}/>
         <div onClick={() => { 
           chooseFile.current.click();
-          props.sessionID.current = props.recipient.id;
-          props.connectRTC();
         }}>
           <motion.img 
             src={recipientIcon}
@@ -68,6 +66,9 @@ const ReceiverIcon = (props) => {
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring" }}
+            onClick={() => {
+              props.connectRTC(props.recipient.id);
+            }}
           >
             {props.recipient.os}
           </motion.p>
