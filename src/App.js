@@ -8,30 +8,21 @@ const socket = io.connect('localhost:8080');
 
 const App = () => {
 	const [nearby, setNearby] = useState([]);
+	const [messages, setMessages] = useState([]);
 	const selfRef = useRef('');
 	const otherRef = useRef('');
 	const peerRef = useRef();
+	const channelRef = useRef();
 
-	const onConnectRTC = (callee) => {
-
-		console.log('initiate call')
-		otherRef.current = callee;
-		peerRef.current = createPeer(callee);
-		peerRef.current.onicecandidate = (e) => {
-			console.log('create ice')
-			if (e.candidate) {
-				const payload = {
-					target: otherRef.current,
-					candidate: e.candidate,
-				}
-				socket.emit("ice-candidate", payload);
-			}
-		}
-		handleNegotiationNeededEvent(callee);
+	const onConnectRTC = (calleeID) => {
+		console.log('rtc triggered')
+		peerRef.current = createPeer(calleeID);
+		channelRef.current = peerRef.current.createDataChannel('sendChannel');
+		// sendChannel.current.onmessage = handleReceiveMessage;
 	}
 
-	const createPeer = (sessionID) => {
-		console.log('making a new peer')
+	const createPeer = (calleeID) => {
+		otherRef.current = calleeID;
 		const peer = new RTCPeerConnection({
 			iceServers: [
 				{
@@ -41,86 +32,79 @@ const App = () => {
 			iceCandidatePoolSize: 10,
 		});
 
+		console.log('created peer')
+
+		peer.onicecandidate = iceEvent;
+		peer.onnegotiationneeded = () => negotiationEvent(calleeID);
+
 		return peer;
 	}
 
-	const handleNegotiationNeededEvent = async (calleeID) => {
-		try {
-			const offerDesc = await peerRef.current.createOffer();
-			await peerRef.current.setLocalDescription(offerDesc);
-
-			const payload = {
-				callee: calleeID,
-				caller: selfRef.current,
-				sdp: peerRef.current.localDescription
-			}
-			await socket.emit('offer-connection', payload);
-			console.log('offer sent')
-		} catch (e) {
-			console.log(e);
-		}
-	}
-
-	const handleReceive = async (incoming) => {
-		console.log('received offer')
-
-		peerRef.current = createPeer();
-		peerRef.current.onicecandidate = (e) => {
-			console.log('create ice')
-			if (e.candidate) {
-				const payload = {
-					target: otherRef.current,
-					candidate: e.candidate,
-				}
-				socket.emit("ice-candidate", payload);
-			}
-		}
-		otherRef.current = incoming.caller;
-		const desc = new RTCSessionDescription(incoming.sdp);
-		await peerRef.current.setRemoteDescription(desc);
-		const answer = await peerRef.current.createAnswer();
-		await peerRef.current.setLocalDescription(answer);
+	const negotiationEvent = async (calleeID) => {
+		console.log('negotiating')
+		const offer = await peerRef.current.createOffer();
+		await peerRef.current.setLocalDescription(offer);
 
 		const payload = {
-			callee: otherRef.current,
+			callee: calleeID,
 			caller: selfRef.current,
-			sdp: peerRef.current.localDescription
-		}
-
-		console.log('answer sent')
-		await socket.emit('answer-connection', payload);
+			sdp: peerRef.current.localDescription,
+		};
+		socket.emit('offer-connection', payload);
 	}
 
-	const handleAnswer = async (incoming) => {
-		console.log('answer logged')
+	const handleOffer = async (offer) => {
+		console.log('offer received')
+		peerRef.current = createPeer();
+		otherRef.current = offer.caller;
+		const desc = new RTCSessionDescription(offer.sdp);
+		await peerRef.current.setRemoteDescription(desc);
+		
+		const ans = await peerRef.current.createAnswer();
 
-		const desc = new RTCSessionDescription(incoming.sdp);
+		await peerRef.current.setLocalDescription(ans);
+		console.log('loco')
 
-		try {
-			await peerRef.current.setRemoteDescription(desc)
-		} catch (e) {
-			console.log(e);
+		const payload = {
+			callee: offer.caller,
+			caller: selfRef.current,
+			sdp: peerRef.current.localDescription,
+		}
+		socket.emit('answer-connection', payload);
+	}
+
+	const handleAnswer = async (answer) => {
+		console.log('answer received')
+		const desc = new RTCSessionDescription(answer.sdp);
+		await peerRef.current.setRemoteDescription(desc);
+	}
+
+	const iceEvent = (e) => {
+		if (e.candidate) {
+			console.log('ice sent')
+			const payload = {
+				callee: otherRef.current,
+				candidate: e.candidate,
+			}
+			socket.emit('ice-candidate', payload);
 		}
 	}
 
-	const handleNewICECandidate = async (incoming) => {
-		console.log('got new ice candidate')
+	const newIceCandidate = async (incoming) => {
+		console.log('ice received')
 		const candidate = new RTCIceCandidate(incoming);
-
-		peerRef.current.addIceCandidate(incoming);
-
 		try {
-			await peerRef.current.addIceCandidate(candidate)
+			await peerRef.current.addIceCandidate(candidate);
 		} catch (e) {
 			console.log(e);
 		}
 	}
 
-	socket.off('offer-connection').on('offer-connection', handleReceive);
+	socket.off('offer-connection').on('offer-connection', handleOffer);
 
 	socket.off('answer-connection').on('answer-connection', handleAnswer);
 
-	socket.off('ice-candidate').on('ice-candidate', handleNewICECandidate);
+	socket.off('ice-candidate').on('ice-candidate', newIceCandidate);
 
 
 	useEffect(() => {
