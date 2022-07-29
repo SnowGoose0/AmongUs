@@ -23,7 +23,7 @@ const ReceiverIcon = (props) => {
     };
   }, []);
 
-  console.log(windowSize)
+  // console.log(windowSize)
 
   const submitFile = (e, file) => {
     e.preventDefault();

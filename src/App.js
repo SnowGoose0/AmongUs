@@ -7,18 +7,27 @@ import Recipient from './Components/Recipient';
 const socket = io.connect('localhost:8080');
 
 const App = () => {
+
+	const [connection, setConnection] = useState({connection: false, peerID: 'NONE'})
+
 	const [nearby, setNearby] = useState([]);
 	const [messages, setMessages] = useState([]);
+	const [text, setText] = useState('data channel works')
+
 	const selfRef = useRef('');
 	const otherRef = useRef('');
-	const peerRef = useRef();
+	const peerRef = useRef(null);
 	const channelRef = useRef();
 
 	const onConnectRTC = (calleeID) => {
 		console.log('rtc triggered')
 		peerRef.current = createPeer(calleeID);
-		channelRef.current = peerRef.current.createDataChannel('sendChannel');
-		// sendChannel.current.onmessage = handleReceiveMessage;
+		channelRef.current = peerRef.current.createDataChannel('main');
+		channelRef.current.onmessage = handleReceiveMessage;
+	}
+
+	const handleReceiveMessage = (e) => {
+		setMessages(messages => [...messages, {yours: false, value: e.data}])
 	}
 
 	const createPeer = (calleeID) => {
@@ -33,7 +42,8 @@ const App = () => {
 		});
 
 		console.log('created peer')
-
+		
+		peer.onsignalingstatechange = signalEvent;
 		peer.onicecandidate = iceEvent;
 		peer.onnegotiationneeded = () => negotiationEvent(calleeID);
 
@@ -57,13 +67,18 @@ const App = () => {
 		console.log('offer received')
 		peerRef.current = createPeer();
 		otherRef.current = offer.caller;
+
+		peerRef.current.ondatachannel = (e) => {
+			channelRef.current = e.channel;
+			channelRef.current.onmessage =  handleReceiveMessage;
+		}
+
 		const desc = new RTCSessionDescription(offer.sdp);
 		await peerRef.current.setRemoteDescription(desc);
 		
 		const ans = await peerRef.current.createAnswer();
 
 		await peerRef.current.setLocalDescription(ans);
-		console.log('loco')
 
 		const payload = {
 			callee: offer.caller,
@@ -100,12 +115,34 @@ const App = () => {
 		}
 	}
 
+	const signalEvent = (e) => {
+		switch (peerRef.current.signalingState) {
+			case 'stable':
+				setConnection({connection: true, peerID: otherRef.current});
+				break;
+			default:
+				setConnection({connection: false, peerID: 'NONE'})
+		}
+	}
+
 	socket.off('offer-connection').on('offer-connection', handleOffer);
 
 	socket.off('answer-connection').on('answer-connection', handleAnswer);
 
 	socket.off('ice-candidate').on('ice-candidate', newIceCandidate);
 
+	const sendMessage = () => {
+		channelRef.current.send(text);
+		setMessages(messages => [...messages, {yours: true, value: text}])
+		setText('data channel works');
+	}
+
+	const disconnectRTC = () => {
+		peerRef.current.close();
+		setConnection({connection: false, peerID: 'NONE'});
+	}
+
+	console.log(connection)
 
 	useEffect(() => {
 		const findNearbyUsers = async () => {
@@ -132,9 +169,6 @@ const App = () => {
 		socket.emit('upload-file', file);
 	}
 
-	// console.log(nearby);
-	// console.log('length', nearby.length)
-
 	return (
 		<div className="App">
 			<div className="recipient-container">
@@ -146,7 +180,10 @@ const App = () => {
 						recipientCount={nearby.length} 
 						upload={uploadFile} 
 						connectRTC={onConnectRTC}
-						/></div> )
+						/>
+						<button onClick={sendMessage}>Send</button>
+						<button onClick={disconnectRTC}>DC</button>
+						</div> )
 				})}
 			</div>
 			<div className="footer-container">
