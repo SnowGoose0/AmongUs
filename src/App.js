@@ -16,7 +16,7 @@ const App = () => {
 
 	const selfRef = useRef('');
 	const otherRef = useRef('');
-	const peerRef = useRef(null);
+	const peerRef = useRef({});
 	const channelRef = useRef();
 
 	const onConnectRTC = (calleeID) => {
@@ -24,6 +24,7 @@ const App = () => {
 		peerRef.current = createPeer(calleeID);
 		channelRef.current = peerRef.current.createDataChannel('main');
 		channelRef.current.onmessage = handleReceiveMessage;
+		channelRef.current.onclose = () => handleChannelClose(calleeID);
 	}
 
 	const handleReceiveMessage = (e) => {
@@ -125,22 +126,29 @@ const App = () => {
 		}
 	}
 
-	socket.off('offer-connection').on('offer-connection', handleOffer);
-
-	socket.off('answer-connection').on('answer-connection', handleAnswer);
-
-	socket.off('ice-candidate').on('ice-candidate', newIceCandidate);
-
 	const sendMessage = () => {
 		channelRef.current.send(text);
 		setMessages(messages => [...messages, {yours: true, value: text}])
 		setText('data channel works');
 	}
 
+	const handleChannelClose = (calleeID) => {
+		disconnectRTC();
+		socket.emit('close-channel', {callee: calleeID})
+	}
+
 	const disconnectRTC = () => {
 		peerRef.current.close();
 		setConnection({connection: false, peerID: 'NONE'});
 	}
+
+	socket.off('offer-connection').on('offer-connection', handleOffer);
+
+	socket.off('answer-connection').on('answer-connection', handleAnswer);
+
+	socket.off('ice-candidate').on('ice-candidate', newIceCandidate);
+
+	socket.off('close-channel').on('close-channel', disconnectRTC);
 
 	console.log(connection)
 
@@ -183,6 +191,7 @@ const App = () => {
 						/>
 						<button onClick={sendMessage}>Send</button>
 						<button onClick={disconnectRTC}>DC</button>
+						<button onClick={() => console.log(connection)}>con</button>
 						</div> )
 				})}
 			</div>
