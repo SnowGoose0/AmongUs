@@ -1,0 +1,91 @@
+.modal {
+    width: 350px;
+    height: min(50%, 200px);
+
+    margin: auto;
+    padding: 0 2rem;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    text-align: left;
+}
+
+.message-prompt {
+    background-color:rgb(24, 24, 24);
+}
+
+.text-field {
+    margin: 2em 0em 2em 0em;
+    padding: 1em;
+}
+
+.message-prompt {
+
+    h1 {
+        font-size: 22px;
+        padding: .5em 0em .5em 0em;
+        font-weight: 550;
+    }
+
+    .text-field-container {
+        display: flex;
+        justify-content: center;
+        .input-prompt {
+            margin-top: -.5em;
+            margin-bottom: 1.3em;
+            padding: 15px 23px 15px 23px;
+            width: 312px;
+            display: block;
+            border: none;
+            outline: none;
+            border-radius: 15px;
+            background-color: rgb(51, 51, 51);
+            color: white;
+        }
+    }
+
+    .message-prompt-buttons {
+        display: flex;
+        justify-content: right;
+        
+        .button {
+            border: none;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 1em 2em 1em 2em;
+            color: white;
+            background-color: rgb(24, 24, 24);
+        }
+    }
+
+    .button:hover {
+        background-color: rgb(51, 51, 51);
+    }
+}
+
+@media all and (max-width: 500px) {
+    
+    .modal {
+        width: 250px;
+    }
+
+    .message-prompt {
+
+        h1 {
+            font-size: 22px;
+            padding: .5em 0em .5em 0em;
+            font-weight: 550;
+        }
+    
+        .text-field-container {
+            .input-prompt {
+                margin-top: -.5em;
+                margin-bottom: 1.3em;
+                padding: 15px 23px 15px 23px;
+                width: 208px;
+
+            }
+        }
+    }
+}
