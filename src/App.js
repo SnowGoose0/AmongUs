@@ -14,6 +14,7 @@ const App = () => {
 	const [messages, setMessages] = useState([]);
 	const [text, setText] = useState('data channel works')
 
+
 	const selfRef = useRef('');
 	const otherRef = useRef('');
 	const peerRef = useRef({});
@@ -28,7 +29,8 @@ const App = () => {
 	}
 
 	const handleReceiveMessage = (e) => {
-		setMessages(messages => [...messages, {yours: false, value: e.data}])
+		// setMessages(messages => [...messages, {yours: false, value: e.data}])
+		console.log(e.data)
 	}
 
 	const createPeer = (calleeID) => {
@@ -126,9 +128,8 @@ const App = () => {
 		}
 	}
 
-	const sendMessage = () => {
-		channelRef.current.send(text);
-		setMessages(messages => [...messages, {yours: true, value: text}])
+	const sendMessage = (msg) => {
+		channelRef.current.send(msg);
 		setText('data channel works');
 	}
 
@@ -173,10 +174,6 @@ const App = () => {
 		setNearby(nearbyUsers);
 	})
 
-	const uploadFile = (file) => {
-		socket.emit('upload-file', file);
-	}
-
 	return (
 		<div className="App">
 			<div className="recipient-container">
@@ -185,9 +182,9 @@ const App = () => {
 						<Recipient 
 						recipient={value} 
 						idx={key} 
-						recipientCount={nearby.length} 
-						upload={uploadFile} 
+						recipientCount={nearby.length}  
 						connectRTC={onConnectRTC}
+						send={sendMessage}
 						/>
 						<button onClick={sendMessage}>Send</button>
 						<button onClick={disconnectRTC}>DC</button>

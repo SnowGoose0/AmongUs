@@ -1,34 +1,19 @@
 import { useState, useEffect ,useRef } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import MessagePrompt from './MessagePrompt'
 import recipientIcon from '../Assets/among-tmp.jpg';
 
-const getWindowSize = () => {
-  const {innerWidth, innerHeight} = window;
-  return {innerWidth, innerHeight};
-}
-
 const ReceiverIcon = (props) => {
-  const [windowSize, setWindowSize] = useState(getWindowSize());
+  const [messagePrompt, setMessagePrompt] = useState(false);
   const chooseFile = useRef()
 
-  useEffect(() => {
-    const handleWindowResize = () => {
-      setWindowSize(getWindowSize());
-    }
-
-    window.addEventListener('resize', handleWindowResize);
-
-    return () => {
-      window.removeEventListener('resize', handleWindowResize);
-    };
-  }, []);
-
-  // console.log(windowSize)
+  const handleMessagePrompt = (e) => {
+    // props.connectRTC(props.recipient.id);
+    e.preventDefault();
+    setMessagePrompt(state => !state);
+  }
 
   const submitFile = (e, file) => {
-    e.preventDefault();
-    props.upload(file);
-    console.log(`uploaded to ${props.recipient.id}`);
   }
 
   return (
@@ -36,14 +21,12 @@ const ReceiverIcon = (props) => {
         <input type="file" ref={chooseFile} className='hidden' onChange={(e) => {
           submitFile(e, e.target.files[0])
         }}/>
-        <div onClick={() => { 
-          chooseFile.current.click();
-        }}>
+        <div onClick={() => {chooseFile.current.click()}} onContextMenu={(e) => handleMessagePrompt(e)}>
           <motion.img 
             src={recipientIcon}
-            className = 'recipient-icon-motion'
-            whileHover = {{ scale: 1.1 }}
-            whileTap = {{ scale: 0.95 }}
+            className='recipient-icon-motion'
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
             initial={{ scale: 0 }}
             animate={{ rotate: 360, scale: 1}}
             transition={{
@@ -72,6 +55,15 @@ const ReceiverIcon = (props) => {
           >
             {props.recipient.os}
           </motion.p>
+
+          <AnimatePresence
+            initial={false}
+            exitBeforeEnter={true}
+            onExitComplete={() => null}
+          >
+            {messagePrompt && <MessagePrompt handleClose={handleMessagePrompt} send={props.send}/>}
+          </AnimatePresence>
+
     </div>
   )
 }
