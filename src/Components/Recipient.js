@@ -61,7 +61,7 @@ const ReceiverIcon = (props) => {
             exitBeforeEnter={true}
             onExitComplete={() => null}
           >
-            {messagePrompt && <MessagePrompt handleClose={handleMessagePrompt} send={props.send}/>}
+            {messagePrompt && <MessagePrompt handleClose={handleMessagePrompt} send={props.send} calleeID={props.recipient.id}/>}
           </AnimatePresence>
 
     </div>

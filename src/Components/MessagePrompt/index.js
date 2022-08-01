@@ -24,7 +24,7 @@ const dropIn = {
     },
 };
 
-const MessagePrompt = ({ handleClose, send }) => {
+const MessagePrompt = ({ handleClose, send, calleeID }) => {
     const [input, setInput] = useState('');
 
     return (
@@ -46,7 +46,7 @@ const MessagePrompt = ({ handleClose, send }) => {
                 <motion.div className='message-prompt-buttons'>
                     <motion.button onClick={handleClose} className='button message-prompt-close'>CANCEL</motion.button>
                     <motion.button onClick={() => {
-                        send(input)
+                        send(input, calleeID)
                         setInput('')
                     }} className='button message-prompt-send'>SEND</motion.button>
                 </motion.div>

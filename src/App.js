@@ -8,12 +8,10 @@ const socket = io.connect('localhost:8080');
 
 const App = () => {
 
-	const [connection, setConnection] = useState({connection: false, peerID: 'NONE'})
+	// const [connection, setConnection] = useState({connection: false, peerID: 'NONE'})
+	const [connections, setConnections] = useState({});
 
 	const [nearby, setNearby] = useState([]);
-	const [messages, setMessages] = useState([]);
-	const [text, setText] = useState('data channel works')
-
 
 	const selfRef = useRef('');
 	const otherRef = useRef('');
@@ -26,6 +24,11 @@ const App = () => {
 		channelRef.current = peerRef.current.createDataChannel('main');
 		channelRef.current.onmessage = handleReceiveMessage;
 		channelRef.current.onclose = () => handleChannelClose(calleeID);
+
+		setConnections({...connections, [calleeID]: {
+			rtc: peerRef.current,
+			channel: channelRef.current,
+		}})
 	}
 
 	const handleReceiveMessage = (e) => {
@@ -69,11 +72,17 @@ const App = () => {
 	const handleOffer = async (offer) => {
 		console.log('offer received')
 		peerRef.current = createPeer();
+		
 		otherRef.current = offer.caller;
 
 		peerRef.current.ondatachannel = (e) => {
 			channelRef.current = e.channel;
 			channelRef.current.onmessage =  handleReceiveMessage;
+
+			setConnections({...connections, [offer.caller]: {
+				rtc: peerRef.current,
+				channel: channelRef.current,
+			}})
 		}
 
 		const desc = new RTCSessionDescription(offer.sdp);
@@ -121,26 +130,33 @@ const App = () => {
 	const signalEvent = (e) => {
 		switch (peerRef.current.signalingState) {
 			case 'stable':
-				setConnection({connection: true, peerID: otherRef.current});
+				// setConnection({connection: true, peerID: otherRef.current});
 				break;
 			default:
-				setConnection({connection: false, peerID: 'NONE'})
+				// setConnection({connection: false, peerID: 'NONE'})
 		}
 	}
 
-	const sendMessage = (msg) => {
-		channelRef.current.send(msg);
-		setText('data channel works');
+	const sendMessage = (msg, calleeID) => {
+		// channelRef.current.send(msg);
+		connections[calleeID].channel.send(msg);
 	}
 
 	const handleChannelClose = (calleeID) => {
-		disconnectRTC();
-		socket.emit('close-channel', {callee: calleeID})
+		try {
+			connections[calleeID].rtc.close();
+			delete connections[calleeID];
+			console.log('ok dc')
+		// socket.emit('close-channel', {callee: calleeID});
+		} catch(e) {
+			console.log('Already Disconnected')
+		}
 	}
 
-	const disconnectRTC = () => {
-		peerRef.current.close();
-		setConnection({connection: false, peerID: 'NONE'});
+	const disconnectRTC = (incoming) => {
+		// peerRef.current.close();
+		console.log(incoming.id)
+		// setConnection({connection: false, peerID: 'NONE'});
 	}
 
 	socket.off('offer-connection').on('offer-connection', handleOffer);
@@ -151,7 +167,7 @@ const App = () => {
 
 	socket.off('close-channel').on('close-channel', disconnectRTC);
 
-	console.log(connection)
+	// console.log(connection)
 
 	useEffect(() => {
 		const findNearbyUsers = async () => {
@@ -186,9 +202,9 @@ const App = () => {
 						connectRTC={onConnectRTC}
 						send={sendMessage}
 						/>
-						<button onClick={sendMessage}>Send</button>
-						<button onClick={disconnectRTC}>DC</button>
-						<button onClick={() => console.log(connection)}>con</button>
+						<button onClick={() => sendMessage('hello', value.id)}>Send</button>
+						<button onClick={() => handleChannelClose(value.id)}>DC</button>
+						<button onClick={() => console.log(connections)}>con</button>
 						</div> )
 				})}
 			</div>
