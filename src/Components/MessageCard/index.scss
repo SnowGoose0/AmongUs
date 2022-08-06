@@ -1,0 +1,64 @@
+.message-card {
+    background-color:rgb(24, 24, 24);
+}
+
+.message-card {
+
+    h1 {
+        font-size: 22px;
+        padding: .5em 0em 0.1em 0em;
+        font-weight: 550;
+    }
+
+    p {
+        margin-top: 2px;
+        margin-bottom: 10px;
+    }
+
+    .received-message {
+        overflow: auto;
+    }
+
+    ::-webkit-scrollbar {
+        height: 15px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background-color: rgb(51, 51, 51);
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border: 2px solid rgb(51, 51, 51);
+        background-color: rgb(24, 24, 24);
+        border-radius: 10px;
+    }
+
+    .message-card-buttons {
+        display: flex;
+        justify-content: right;
+        margin-top: 6%;
+        
+        .button {
+            border: none;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 1em 2em 1em 2em;
+            color: white;
+            background-color: rgb(24, 24, 24);
+        }
+    }
+
+    .button:hover {
+        background-color: rgb(51, 51, 51);
+    }
+}
+
+@media all and (max-width: 500px) {
+    
+    .modal {
+        width: 250px;
+    }
+
+ 
+}

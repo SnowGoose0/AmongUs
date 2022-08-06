@@ -44,3 +44,15 @@ font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     }
 }
 
+.modal {
+    width: 350px;
+    height: min(50%, 200px);
+
+    margin: auto;
+    padding: 0 2rem;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    text-align: left;
+}
