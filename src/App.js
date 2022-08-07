@@ -1,6 +1,7 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import streamSaver from 'streamsaver';
 import io from 'socket.io-client';
 import axios from 'axios';
 import Recipient from './Components/Recipient/index';
@@ -10,6 +11,8 @@ import MessageCard from './Components/MessageCard/index';
 const socket = io.connect('localhost:8080');
 
 let connections = {}
+
+const worker = new Worker('../Worker.js');
 
 const App = () => {
 
@@ -21,6 +24,8 @@ const App = () => {
 	}
 
 	const [nearby, setNearby] = useState([]);
+	const [file, setFile] = useState();
+	const [gotFile, setGotFile] = useState(false);
 
 	const selfRef = useRef('');
 	const otherRef = useRef('');
@@ -50,7 +55,9 @@ const App = () => {
 		connections[calleeID].rtc.onnegotiationneeded = () => negotiationEvent(calleeID);
 
 		channelRef.current = connections[calleeID].rtc.createDataChannel('main');
-		channelRef.current.onmessage = handleReceiveMessage;
+		channelRef.current.bufferedAmountLowThreshold = 65535;
+		// channelRef.current.onmessage = handleReceivingMessage;
+		channelRef.current.onmessage = handleReceivingData;
 		channelRef.current.onclose = () => handleChannelClose(calleeID);
 
 		setConnections({...connections, [calleeID]: {
@@ -59,7 +66,7 @@ const App = () => {
 		}})
 	}
 
-	const handleReceiveMessage = (e) => {
+	const handleReceivingMessage = (e) => {
 		setMessage(e.data);
 		setMessageReceived(true);
 	}
@@ -106,7 +113,9 @@ const App = () => {
 		peerRef.current = connections[offer.caller].rtc;
 		peerRef.current.ondatachannel = (e) => {
 			channelRef.current = e.channel;
-			channelRef.current.onmessage =  handleReceiveMessage;
+			// channelRef.current.onmessage =  handleReceivingMessage;
+			channelRef.current.onmessage = handleReceivingData;
+			channelRef.current.bufferedAmountLowThreshold = 65535;
 
 			setConnections({...connections, [offer.caller]: {
 				rtc: peerRef.current,
@@ -203,13 +212,73 @@ const App = () => {
 
 	console.log(connections)
 
+	const fileNameRef = useRef('')
+
+	const handleReceivingData = (e) => {
+		// if (typeof e.data === 'string') {
+		// 	// setMessage(e.data);
+		// 	// setMessageReceived(true);
+		// } else 
+		if (e.data.toString().includes("done")) {
+			setGotFile(true);
+			const parsed = JSON.parse(e.data);
+			fileNameRef.current = parsed.fileName;
+		} else {
+			worker.postMessage(e.data);
+		}
+	}
+
+	const download = () => {
+		setGotFile(false);
+		worker.postMessage('download');
+		worker.addEventListener('message', (e) => {
+			const stream = e.data.stream();
+			const fileStream = streamSaver.createWriteStream(fileNameRef.current);
+			stream.pipeTo(fileStream);
+
+		})
+	}
+
+	const selectFile = (e) => {
+		setFile(e.target.files[0]);
+		console.log(e.target.files[0].size)
+	}
+
+	const sendFile = (calleeID) => {
+		const channel = connections[calleeID].channel
+		console.log('')
+		const stream = file.stream();
+		const reader = stream.getReader();
+
+		reader.read().then(obj => {
+			handleReader(obj.done, obj.value)
+		});
+
+		const handleReader = (done, value) => {
+			if (done) {
+				channel.send(JSON.stringify({done: true, fileName: file.name}));
+				return;
+			}
+
+			channel.send(value);
+			reader.read().then(obj => {
+				handleReader(obj.done, obj.value);
+			})
+		}
+
+		// const handleReader = (done, value) => {
+			
+		// }
+	}
+
 	return (
 		<div className="App">
 			<div className="recipient-container">
 				{nearby.filter((value) => value.id !== selfRef.current).map((value, key) => {
 					return ( <div key={key}>
 						<Recipient recipient={value}>
-							<Avatar send={sendMessage} recipient={value} avatar64={value.image64}/>
+							<Avatar send={sendMessage} recipient={value} avatar64={value.image64} sendFile={sendFile} selectFile={selectFile}/>
+							{gotFile && <button onClick={download}>Download</button>}
 						</Recipient>
 						</div> )
 				})}

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import MessagePrompt from '../MessagePrompt/index'
 import './index.css'
 
-const Avatar = ({ send, recipient, avatar64 }) => {
+const Avatar = ({ send, recipient, avatar64, sendFile, selectFile }) => {
     const [messagePrompt, setMessagePrompt] = useState(false);
     const chooseFile = useRef();
 
@@ -11,25 +11,11 @@ const Avatar = ({ send, recipient, avatar64 }) => {
         e.preventDefault();
         setMessagePrompt(state => !state);
     }
-
-    const draw = {
-        hidden: { pathLength: 0, opacity: 0 },
-        visible: (i) => {
-          const delay = 1 + i * 0.5;
-          return {
-            pathLength: 1,
-            opacity: 1,
-            transition: {
-              pathLength: { delay, type: "spring", duration: 1.5, bounce: 0 },
-              opacity: { delay, duration: 0.01 }
-            }
-          };
-        }
-      };
+    
 
     return (
         <div>
-            <input type="file" ref={chooseFile} className='hidden' onChange={() => {console.log('file submitted')}}/>
+            <input type="file" ref={chooseFile} className='hidden' onChange={selectFile}/>
             <div onClick={() => {chooseFile.current.click()}} onContextMenu={(e) => handleMessagePrompt(e)}>
                 <motion.img 
                     src={avatar64}
@@ -45,6 +31,9 @@ const Avatar = ({ send, recipient, avatar64 }) => {
                     }}
                 >
                 </motion.img>
+            </div>
+            <div>
+                <button onClick={() => {sendFile(recipient.id)}}> Send File</button>
             </div>
             <div>
                 <AnimatePresence
