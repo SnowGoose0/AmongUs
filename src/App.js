@@ -4,6 +4,7 @@ import { AnimatePresence, DragControls, motion } from 'framer-motion';
 import streamSaver from 'streamsaver';
 import io from 'socket.io-client';
 import axios from 'axios';
+import ParticlesBackground from './Components/ParticlesBackground';
 import Recipient from './Components/Recipient/index';
 import Avatar from './Components/Avatar/index'
 import MessageCard from './Components/MessageCard/index';
@@ -292,6 +293,7 @@ const App = () => {
 
 	return (
 		<div className="App">
+			<ParticlesBackground />
 			<div className="recipient-container">
 				{nearby.filter((value) => value.id !== selfRef.current).map((value, key) => {
 					return ( <div key={key}>

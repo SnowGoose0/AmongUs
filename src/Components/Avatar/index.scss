@@ -9,3 +9,11 @@
     height: 20px;
     background-color: rgb(255, 6, 6);
 }
+
+.recipient-icon-motion {
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
