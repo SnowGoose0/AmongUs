@@ -1,6 +1,6 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, DragControls, motion } from 'framer-motion';
 import streamSaver from 'streamsaver';
 import io from 'socket.io-client';
 import axios from 'axios';
@@ -10,7 +10,9 @@ import MessageCard from './Components/MessageCard/index';
 
 const socket = io.connect('localhost:8080');
 
-let connections = {}
+let connections = {};
+
+const THRESHOLD = 253555;
 
 const worker = new Worker('../Worker.js');
 
@@ -55,7 +57,7 @@ const App = () => {
 		connections[calleeID].rtc.onnegotiationneeded = () => negotiationEvent(calleeID);
 
 		channelRef.current = connections[calleeID].rtc.createDataChannel('main');
-		channelRef.current.bufferedAmountLowThreshold = 65535;
+		channelRef.current.bufferedAmountLowThreshold = THRESHOLD;
 		// channelRef.current.onmessage = handleReceivingMessage;
 		channelRef.current.onmessage = handleReceivingData;
 		channelRef.current.onclose = () => handleChannelClose(calleeID);
@@ -115,7 +117,7 @@ const App = () => {
 			channelRef.current = e.channel;
 			// channelRef.current.onmessage =  handleReceivingMessage;
 			channelRef.current.onmessage = handleReceivingData;
-			channelRef.current.bufferedAmountLowThreshold = 65535;
+			channelRef.current.bufferedAmountLowThreshold = THRESHOLD;
 
 			setConnections({...connections, [offer.caller]: {
 				rtc: peerRef.current,
@@ -196,8 +198,11 @@ const App = () => {
 
 
 	socket.off('user-joined').on('user-joined', onConnectRTC)
+
 	socket.off('offer-connection').on('offer-connection', handleOffer);
+
 	socket.off('answer-connection').on('answer-connection', handleAnswer);
+
 	socket.off('ice-candidate').on('ice-candidate', newIceCandidate);
 
 	socket.off('close-channel').on('close-channel', disconnectRTC);
@@ -215,10 +220,6 @@ const App = () => {
 	const fileNameRef = useRef('')
 
 	const handleReceivingData = (e) => {
-		// if (typeof e.data === 'string') {
-		// 	// setMessage(e.data);
-		// 	// setMessageReceived(true);
-		// } else 
 		if (e.data.toString().includes("done")) {
 			setGotFile(true);
 			const parsed = JSON.parse(e.data);
@@ -244,31 +245,49 @@ const App = () => {
 		console.log(e.target.files[0].size)
 	}
 
+	peerRef.current.onbufferedamountlow = (e) => {
+		console.log('low');
+	}
+
+	const [progress, setProgress] = useState(0)
+
 	const sendFile = (calleeID) => {
 		const channel = connections[calleeID].channel
-		console.log('')
-		const stream = file.stream();
-		const reader = stream.getReader();
+		const chunkSize = THRESHOLD;
+		const currentFile = file;
 
-		reader.read().then(obj => {
-			handleReader(obj.done, obj.value)
-		});
+		currentFile.arrayBuffer().then((buffer) => {
 
-		const handleReader = (done, value) => {
-			if (done) {
+			// while(buffer.byteLength) {
+			// 	const chunk = buffer.slice(0, chunkSize);
+			// 	buffer = buffer.slice(chunkSize, buffer.byteLength);
+			// 	channel.send(chunk)
+			// 	setProgress((currentFile.size - buffer.byteLength) / currentFile.size);
+			// }
+
+			const send = () => {
+				while (buffer.byteLength) {
+					console.log('thresh', channel.bufferedAmountLowThreshold)
+					if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
+						channel.onbufferedamountlow = () => {
+							console.log('event');
+							channel.onbufferedamountlow = null;
+							send();
+						};
+						return;
+					}
+					const chunk = buffer.slice(0, chunkSize);
+					buffer = buffer.slice(chunkSize, buffer.byteLength);
+					setProgress((currentFile.size - buffer.byteLength) / currentFile.size);
+					channel.send(chunk);
+				}
+
 				channel.send(JSON.stringify({done: true, fileName: file.name}));
-				return;
-			}
+			  };
 
-			channel.send(value);
-			reader.read().then(obj => {
-				handleReader(obj.done, obj.value);
-			})
-		}
+			send();
 
-		// const handleReader = (done, value) => {
-			
-		// }
+		})
 	}
 
 	return (
@@ -277,7 +296,14 @@ const App = () => {
 				{nearby.filter((value) => value.id !== selfRef.current).map((value, key) => {
 					return ( <div key={key}>
 						<Recipient recipient={value}>
-							<Avatar send={sendMessage} recipient={value} avatar64={value.image64} sendFile={sendFile} selectFile={selectFile}/>
+							<Avatar 
+								send={sendMessage} 
+								recipient={value} 
+								avatar64={value.image64} 
+								sendFile={sendFile} 
+								selectFile={selectFile}
+								progress={progress}
+							/>
 							{gotFile && <button onClick={download}>Download</button>}
 						</Recipient>
 						</div> )

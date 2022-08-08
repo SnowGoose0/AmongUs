@@ -3,9 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import MessagePrompt from '../MessagePrompt/index'
 import './index.css'
 
-const Avatar = ({ send, recipient, avatar64, sendFile, selectFile }) => {
+const Avatar = ({ send, recipient, avatar64, sendFile, selectFile, progress }) => {
     const [messagePrompt, setMessagePrompt] = useState(false);
     const chooseFile = useRef();
+
+    console.log(progress)
 
     const handleMessagePrompt = (e) => {
         e.preventDefault();
@@ -35,13 +37,22 @@ const Avatar = ({ send, recipient, avatar64, sendFile, selectFile }) => {
             <div>
                 <button onClick={() => {sendFile(recipient.id)}}> Send File</button>
             </div>
+            <div className='progress-container'>
+                <motion.div
+                    className='progress-bar'
+                    initial={{ width: "0%" }}
+                    animate={{ width:  `${progress * 100}%`}}
+                >
+
+                </motion.div>
+            </div>
             <div>
                 <AnimatePresence
                 initial={false}
                 exitBeforeEnter={true}
                 onExitComplete={() => null}
                 >
-                {messagePrompt && <MessagePrompt handleClose={handleMessagePrompt} send={send} calleeID={recipient.id}/>}
+                    {messagePrompt && <MessagePrompt handleClose={handleMessagePrompt} send={send} calleeID={recipient.id}/>}
                 </AnimatePresence>
             </div>
         </div>
