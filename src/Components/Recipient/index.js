@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import './index.css'
 
 const ReceiverIcon = ({ children, recipient }) => {
 

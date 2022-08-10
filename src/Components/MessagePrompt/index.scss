@@ -16,9 +16,11 @@
     }
 
     .text-field-container {
+        font-family: Comfortaa;
         display: flex;
         justify-content: center;
         .input-prompt {
+            font-family: Comfortaa;
             margin-top: -.5em;
             margin-bottom: 1.3em;
             padding: 15px 23px 15px 23px;
@@ -37,6 +39,7 @@
         justify-content: right;
         
         .button {
+            font-family: Comfortaa;
             border: none;
             font-weight: bold;
             border-radius: 10px;

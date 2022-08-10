@@ -12,17 +12,19 @@
   margin-bottom: 10px;
 }
 .message-card .received-message {
+  padding-top: 1em;
+  font-style: italic;
   overflow: auto;
 }
 .message-card ::-webkit-scrollbar {
-  height: 15px;
+  height: 5px;
 }
 .message-card ::-webkit-scrollbar-track {
   background-color: rgb(51, 51, 51);
   border-radius: 10px;
 }
 .message-card ::-webkit-scrollbar-thumb {
-  border: 2px solid rgb(51, 51, 51);
+  border: 1px solid rgb(51, 51, 51);
   background-color: rgb(24, 24, 24);
   border-radius: 10px;
 }
@@ -32,6 +34,7 @@
   margin-top: 6%;
 }
 .message-card .message-card-buttons .button {
+  font-family: Comfortaa;
   border: none;
   font-weight: bold;
   border-radius: 10px;

@@ -2,6 +2,7 @@
 
 body {
     margin: 0;
+    overflow: hidden;
     font-family: Comfortaa;
     background-color: rgb(18, 18, 18);
     color: white;
@@ -14,11 +15,6 @@ body {
     -webkit-user-select: none;
     -ms-user-select: none;
 }
-  
-code {
-font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
 
 .hidden {
     display: none;
@@ -29,24 +25,28 @@ font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     justify-content: center;
 }
 
-.active-recipient {
-    padding: 1em;
-    .recipient-icon-motion {
-        border-radius: 50%;
-        max-width: 90px;
-    }
-}
-
 .footer-container {
     position: fixed;
     left: 0;
     bottom: 0;
     width: 100%;
-    padding-bottom: 3em;
+    padding-bottom: 5em;
     text-align: center;
+
+    // scaled 0.9 in motion.h2
     h1 {
         text-align: center;
     }
+}
+
+.join-device {
+    position: absolute;
+    top:10em;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    
+    margin: auto;
 }
 
 .modal {

@@ -13,10 +13,12 @@
   font-weight: 550;
 }
 .message-prompt .text-field-container {
+  font-family: Comfortaa;
   display: flex;
   justify-content: center;
 }
 .message-prompt .text-field-container .input-prompt {
+  font-family: Comfortaa;
   margin-top: -0.5em;
   margin-bottom: 1.3em;
   padding: 15px 23px 15px 23px;
@@ -33,6 +35,7 @@
   justify-content: right;
 }
 .message-prompt .message-prompt-buttons .button {
+  font-family: Comfortaa;
   border: none;
   font-weight: bold;
   border-radius: 10px;

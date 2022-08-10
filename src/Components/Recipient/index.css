@@ -1,1 +1,10 @@
-/*# sourceMappingURL=index.css.map */
+.active-recipient {
+  padding: 1em;
+}
+.active-recipient h4 {
+  margin: 0.5em;
+}
+.active-recipient .recipient-icon-motion {
+  border-radius: 50%;
+  max-width: 90px;
+}/*# sourceMappingURL=index.css.map */

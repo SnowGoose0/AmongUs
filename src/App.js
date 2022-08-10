@@ -1,19 +1,24 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
-import { AnimatePresence, DragControls, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import streamSaver from 'streamsaver';
 import io from 'socket.io-client';
 import axios from 'axios';
-import ParticlesBackground from './Components/ParticlesBackground';
+import ParticlesBackground from './Components/ParticlesBackground/index';
+import Nav from './Components/Nav/index';
+import InfoPage from './Components/InfoPage/index';
 import Recipient from './Components/Recipient/index';
 import Avatar from './Components/Avatar/index'
 import MessageCard from './Components/MessageCard/index';
+
+import infoIcon from './Assets/info.png'
 
 const socket = io.connect('localhost:8080');
 
 let connections = {};
 
 const THRESHOLD = 253555;
+const MSGDECODE = '[[!@#$%^&* ($.--$---$-.$....$.$.$) !@#$%^&*]]'
 
 const worker = new Worker('../Worker.js');
 
@@ -21,19 +26,21 @@ const App = () => {
 
 	const [message, setMessage] = useState('')
 	const [messageReceived, setMessageReceived] = useState(false);
+	const [menuOpen, setMenuOpen] = useState(false);
 
 	const setConnections = (value) => {
 		connections = value;
 	}
 
 	const [nearby, setNearby] = useState([]);
-	const [file, setFile] = useState();
+	const [progress, setProgress] = useState({});
 	const [gotFile, setGotFile] = useState(false);
 
 	const selfRef = useRef('');
 	const otherRef = useRef('');
 	const peerRef = useRef({});
 	const channelRef = useRef();
+	const fileNameRef = useRef('');
 
 	useEffect(() => {
 		const findNearbyUsers = async () => {
@@ -48,18 +55,30 @@ const App = () => {
 		findNearbyUsers();
 	}, [])
 
+	useEffect(() => {
+		let newProgress = {}
+		for (let i = 0; i < nearby.length; i++) {
+			const id = nearby[i].id
+			if (id in progress) {
+				newProgress[id] = progress[id];
+			}
+		}
+
+		setProgress(newProgress);
+	}, [nearby])
+
 	const onConnectRTC = (calleeID) => {
+
 		createPeer(calleeID);
 
 		peerRef.current = connections[calleeID].rtc;
 
-		connections[calleeID].rtc.onsignalingstatechange = signalEvent;
 		connections[calleeID].rtc.onicecandidate = iceEvent;
 		connections[calleeID].rtc.onnegotiationneeded = () => negotiationEvent(calleeID);
 
 		channelRef.current = connections[calleeID].rtc.createDataChannel('main');
+
 		channelRef.current.bufferedAmountLowThreshold = THRESHOLD;
-		// channelRef.current.onmessage = handleReceivingMessage;
 		channelRef.current.onmessage = handleReceivingData;
 		channelRef.current.onclose = () => handleChannelClose(calleeID);
 
@@ -166,19 +185,9 @@ const App = () => {
 		}
 	}
 
-	const signalEvent = (e) => {
-		switch (peerRef.current.signalingState) {
-			case 'stable':
-				// setConnection({connection: true, peerID: otherRef.current});
-				break;
-			default:
-				// setConnection({connection: false, peerID: 'NONE'})
-		}
-	}
-
 	const sendMessage = (msg, calleeID) => {
 		// channelRef.current.send(msg);
-		connections[calleeID].channel.send(msg);
+		connections[calleeID].channel.send(MSGDECODE + msg);
 	}
 
 	const handleChannelClose = (calleeID) => {
@@ -218,10 +227,12 @@ const App = () => {
 
 	console.log(connections)
 
-	const fileNameRef = useRef('')
-
 	const handleReceivingData = (e) => {
-		if (e.data.toString().includes("done")) {
+		if (typeof(e.data) === 'string' && e.data.includes(MSGDECODE)){
+			const decodedMessage = e.data.slice(MSGDECODE.length);
+			setMessage(decodedMessage);
+			setMessageReceived(true);
+		} else if (e.data.toString().includes("done")) {
 			setGotFile(true);
 			const parsed = JSON.parse(e.data);
 			fileNameRef.current = parsed.fileName;
@@ -241,18 +252,7 @@ const App = () => {
 		})
 	}
 
-	const selectFile = (e) => {
-		setFile(e.target.files[0]);
-		console.log(e.target.files[0].size)
-	}
-
-	peerRef.current.onbufferedamountlow = (e) => {
-		console.log('low');
-	}
-
-	const [progress, setProgress] = useState(0)
-
-	const sendFile = (calleeID) => {
+	const sendFile = (calleeID, file) => {
 		const channel = connections[calleeID].channel
 		const chunkSize = THRESHOLD;
 		const currentFile = file;
@@ -277,11 +277,23 @@ const App = () => {
 						};
 						return;
 					}
+					
 					const chunk = buffer.slice(0, chunkSize);
 					buffer = buffer.slice(chunkSize, buffer.byteLength);
-					setProgress((currentFile.size - buffer.byteLength) / currentFile.size);
-					channel.send(chunk);
+
+					if (currentFile.size <= channel.bufferedAmountLowThreshold) {
+						setProgress({...progress, [calleeID]: 1});
+
+					} else {
+						const uploadProgress = (currentFile.size - buffer.byteLength) / currentFile.size;
+						setProgress({...progress, [calleeID]: uploadProgress});
+						channel.send(chunk);
+					}
 				}
+
+				setTimeout(() => {
+					setProgress({...progress, [calleeID]: 0});
+				}, 500);
 
 				channel.send(JSON.stringify({done: true, fileName: file.name}));
 			  };
@@ -293,7 +305,12 @@ const App = () => {
 
 	return (
 		<div className="App">
-			<ParticlesBackground />
+			<Nav
+				setMenuOpen={setMenuOpen}
+				img={infoIcon}
+				delayCustom={1}
+				showIcon={!menuOpen}
+			/>
 			<div className="recipient-container">
 				{nearby.filter((value) => value.id !== selfRef.current).map((value, key) => {
 					return ( <div key={key}>
@@ -303,17 +320,24 @@ const App = () => {
 								recipient={value} 
 								avatar64={value.image64} 
 								sendFile={sendFile} 
-								selectFile={selectFile}
-								progress={progress}
+								prog={progress[value.id]}
+								setProg={setProgress}
 							/>
 							{gotFile && <button onClick={download}>Download</button>}
 						</Recipient>
 						</div> )
 				})}
 			</div>
-			<div className="footer-container">
+
+			<motion.div 
+				className="footer-container"
+				initial={{ opacity: 0, scale: 0.9 }}
+				animate={{ opacity: 1 }}
+				exit={{ opacity: 0, scale: 0.9 }}
+				transition={{ delay: 1, duration: 1 }}
+			>
 				<p>You are known as: {selfRef.current.slice(0, 5)}</p>
-			</div>
+			</motion.div>
 
 			<div>
                 <AnimatePresence
@@ -327,6 +351,29 @@ const App = () => {
 				}} value={message}/>}
                 </AnimatePresence>
             </div>
+
+			{nearby.length <= 1 && (
+				<AnimatePresence>
+					<motion.div 
+						className='join-device'
+					>
+						<motion.h2
+							initial={{ opacity: 0, scale: 0.9 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0, scale: 0.9 }}
+							transition={{ delay: 1, duration: 1 }}
+						>Open on other devices to send files</motion.h2>
+					</motion.div>
+				</AnimatePresence>
+			)}
+
+
+			<InfoPage
+				menuOpen={menuOpen}
+				setMenuOpen={setMenuOpen}
+			/>
+
+			<ParticlesBackground />
 		</div>
 	);
 }

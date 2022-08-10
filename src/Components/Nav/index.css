@@ -1,0 +1,12 @@
+.empty {
+  display: flex;
+  justify-content: right;
+  margin: 0em;
+}
+.empty .nav-container {
+  padding: 1.5em;
+}
+.empty .nav-container .icon {
+  margin-left: 0;
+  width: 20px;
+}/*# sourceMappingURL=index.css.map */

@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@500&family=Poppins&family=Roboto+Mono:wght@500&family=Source+Code+Pro:wght@500&display=swap");
 body {
   margin: 0;
+  overflow: hidden;
   font-family: Comfortaa;
   background-color: rgb(18, 18, 18);
   color: white;
@@ -14,10 +15,6 @@ body {
   -ms-user-select: none;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
 .hidden {
   display: none;
 }
@@ -27,24 +24,25 @@ code {
   justify-content: center;
 }
 
-.active-recipient {
-  padding: 1em;
-}
-.active-recipient .recipient-icon-motion {
-  border-radius: 50%;
-  max-width: 90px;
-}
-
 .footer-container {
   position: fixed;
   left: 0;
   bottom: 0;
   width: 100%;
-  padding-bottom: 3em;
+  padding-bottom: 5em;
   text-align: center;
 }
 .footer-container h1 {
   text-align: center;
+}
+
+.join-device {
+  position: absolute;
+  top: 10em;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
 }
 
 .modal {
