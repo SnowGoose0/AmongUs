@@ -10,6 +10,7 @@ import InfoPage from './Components/InfoPage/index';
 import Recipient from './Components/Recipient/index';
 import Avatar from './Components/Avatar/index'
 import MessageCard from './Components/MessageCard/index';
+import DownloadCard from './Components/DownloadCard/index';
 
 import infoIcon from './Assets/info.png'
 
@@ -26,6 +27,7 @@ const App = () => {
 
 	const [message, setMessage] = useState('')
 	const [messageReceived, setMessageReceived] = useState(false);
+	const [fileReceived, setFileReceived] = useState(false);
 	const [menuOpen, setMenuOpen] = useState(false);
 
 	const setConnections = (value) => {
@@ -34,9 +36,9 @@ const App = () => {
 
 	const [nearby, setNearby] = useState([]);
 	const [progress, setProgress] = useState({});
-	const [gotFile, setGotFile] = useState(false);
 
 	const selfRef = useRef('');
+	const aliasRef = useRef('');
 	const otherRef = useRef('');
 	const peerRef = useRef({});
 	const channelRef = useRef();
@@ -223,9 +225,17 @@ const App = () => {
 
 	socket.on('nearby-users', (nearbyUsers) => {
 		setNearby(nearbyUsers);
+
+		nearbyUsers.forEach((user) => {
+			if (user.id === selfRef.current) {
+				aliasRef.current = user.alias;
+			}
+		})
 	})
 
 	console.log(connections)
+
+	const [recentSender, setRecentSender] = useState('')
 
 	const handleReceivingData = (e) => {
 		if (typeof(e.data) === 'string' && e.data.includes(MSGDECODE)){
@@ -233,16 +243,17 @@ const App = () => {
 			setMessage(decodedMessage);
 			setMessageReceived(true);
 		} else if (e.data.toString().includes("done")) {
-			setGotFile(true);
+			setFileReceived(true);
 			const parsed = JSON.parse(e.data);
 			fileNameRef.current = parsed.fileName;
+			setRecentSender(parsed.sender);
 		} else {
 			worker.postMessage(e.data);
 		}
 	}
 
 	const download = () => {
-		setGotFile(false);
+		setFileReceived(false);
 		worker.postMessage('download');
 		worker.addEventListener('message', (e) => {
 			const stream = e.data.stream();
@@ -295,7 +306,7 @@ const App = () => {
 					setProgress({...progress, [calleeID]: 0});
 				}, 500);
 
-				channel.send(JSON.stringify({done: true, fileName: file.name}));
+				channel.send(JSON.stringify({done: true, fileName: file.name, sender: aliasRef.current}));
 			  };
 
 			send();
@@ -314,7 +325,7 @@ const App = () => {
 			<div className="recipient-container">
 				{nearby.filter((value) => value.id !== selfRef.current).map((value, key) => {
 					return ( <div key={key}>
-						<Recipient recipient={value}>
+						<Recipient recipient={value} alias={value.alias}>
 							<Avatar 
 								send={sendMessage} 
 								recipient={value} 
@@ -323,7 +334,7 @@ const App = () => {
 								prog={progress[value.id]}
 								setProg={setProgress}
 							/>
-							{gotFile && <button onClick={download}>Download</button>}
+							{fileReceived && <button onClick={download}>Download</button>}
 						</Recipient>
 						</div> )
 				})}
@@ -336,7 +347,8 @@ const App = () => {
 				exit={{ opacity: 0, scale: 0.9 }}
 				transition={{ delay: 1, duration: 1 }}
 			>
-				<p>You are known as: {selfRef.current.slice(0, 5)}</p>
+				{/* <p>You are known as: {selfRef.current.slice(0, 5)}</p> */}
+				<p>You are known as: {aliasRef.current}</p>
 			</motion.div>
 
 			<div>
@@ -347,8 +359,20 @@ const App = () => {
                 >
                 {messageReceived && <MessageCard handleClose={(e) => {
 					e.preventDefault();
-					setMessageReceived(state => !state);
+					setMessageReceived(false);
 				}} value={message}/>}
+                </AnimatePresence>
+            </div>
+
+			<div>
+                <AnimatePresence
+                initial={false}
+                exitBeforeEnter={true}
+                onExitComplete={() => null}
+                >
+                {fileReceived && <DownloadCard handleClose={(e) => {
+					e.preventDefault();
+				}} value={recentSender} download={download}/>}
                 </AnimatePresence>
             </div>
 

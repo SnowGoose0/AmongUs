@@ -20,20 +20,24 @@
     border-color: rgb(18, 18, 18);
 }
 
-.avatar-container {
-    visibility: visible;
+.client-container {
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 110px;
-    width: 110px;
-    border-radius: 50%;
-
-    .recipient-icon-motion {
-        -webkit-user-drag: none;
-        user-select: none;
-        -moz-user-select: none;
-        -webkit-user-select: none;
-        -ms-user-select: none;
+    .avatar-container {
+        visibility: visible;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 110px;
+        width: 110px;
+        border-radius: 50%;
+    
+        .recipient-icon-motion {
+            -webkit-user-drag: none;
+            user-select: none;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
     }
 }

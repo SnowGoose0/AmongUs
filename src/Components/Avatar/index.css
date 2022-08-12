@@ -20,7 +20,11 @@
   border-color: rgb(18, 18, 18);
 }
 
-.avatar-container {
+.client-container {
+  display: flex;
+  justify-content: center;
+}
+.client-container .avatar-container {
   visibility: visible;
   display: flex;
   justify-content: center;
@@ -29,7 +33,7 @@
   width: 110px;
   border-radius: 50%;
 }
-.avatar-container .recipient-icon-motion {
+.client-container .avatar-container .recipient-icon-motion {
   -webkit-user-drag: none;
   user-select: none;
   -moz-user-select: none;

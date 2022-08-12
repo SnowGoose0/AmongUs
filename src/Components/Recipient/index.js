@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import './index.css'
 
-const ReceiverIcon = ({ children, recipient }) => {
+const ReceiverIcon = ({ children, recipient, alias }) => {
 
     return (
         <div className='active-recipient'>
@@ -11,7 +11,7 @@ const ReceiverIcon = ({ children, recipient }) => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring" }}
             >
-              {recipient.id.slice(0, 5)}
+              {alias}
             </motion.h4>
             <motion.p
               initial={{ opacity: 0, scale: 0.5 }}
