@@ -2,7 +2,7 @@ import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import streamSaver from 'streamsaver';
-import io from 'socket.io-client';
+import io, { connect } from 'socket.io-client';
 import axios from 'axios';
 import ParticlesBackground from './Components/ParticlesBackground/index';
 import Nav from './Components/Nav/index';
@@ -16,10 +16,10 @@ import infoIcon from './Assets/info.png'
 
 const socket = io.connect('localhost:8080');
 
-let connections = {};
-
 const THRESHOLD = 253555;
-const MSGDECODE = '[[!@#$%^&* ($.--$---$-.$....$.$.$) !@#$%^&*]]'
+const MSGDECODE = '[[!@#$%^&* ($.--$---$-.$....$.$.$) !@#$%^&*]]';
+
+let connections = {};
 
 const worker = new Worker('../Worker.js');
 
@@ -29,6 +29,7 @@ const App = () => {
 	const [messageReceived, setMessageReceived] = useState(false);
 	const [fileReceived, setFileReceived] = useState(false);
 	const [menuOpen, setMenuOpen] = useState(false);
+	// const [connections, setConnections] = useState({});
 
 	const setConnections = (value) => {
 		connections = value;
@@ -68,9 +69,7 @@ const App = () => {
 	}, [nearby])
 
 	const onConnectRTC = (calleeID) => {
-
-		createPeer(calleeID);
-
+		createPeer(calleeID)
 		const newPeer = connections[calleeID].rtc;
 
 		newPeer.onicecandidate = iceEvent;
@@ -87,26 +86,38 @@ const App = () => {
 		}})
 	}
 
+	// useEffect(() => {
+	// 	if (Object.keys(connections).length === 0) {
+	// 		return
+	// 	} else {
+	// 		const calleeID = otherRef.current;
+			
+	// 		const newPeer = connections[calleeID].rtc;
+	// 		const newChannel = connections[calleeID].channel;
+
+	// 		newPeer.onicecandidate = iceEvent;
+	// 		newPeer.onnegotiationneeded = () => negotiationEvent(calleeID);
+
+	// 		newChannel.bufferedAmountLowThreshold = THRESHOLD;
+	// 		newChannel.onmessage = handleReceivingData;
+	// 	}
+
+	// }, [connections])
+
 	const createPeer = (calleeID) => {
 		otherRef.current = calleeID;
-		// const peer = new RTCPeerConnection({
-		// 	iceServers: [
-		// 		{
-		// 			urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302']
-		// 		},
-		// 	],
-		// 	iceCandidatePoolSize: 10,
-		// });
+
+		const newRTC = new RTCPeerConnection({
+			iceServers: [
+				{
+					urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302']
+				},
+			],
+			iceCandidatePoolSize: 10,
+		});
 
 		setConnections({...connections, [calleeID]: {
-			rtc: new RTCPeerConnection({
-				iceServers: [
-					{
-						urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302']
-					},
-				],
-				iceCandidatePoolSize: 10,
-			}),
+			rtc: newRTC,
 		}})
 	}
 
