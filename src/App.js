@@ -2,7 +2,7 @@ import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import streamSaver from 'streamsaver';
-import io, { connect } from 'socket.io-client';
+import io from 'socket.io-client';
 import axios from 'axios';
 import ParticlesBackground from './Components/ParticlesBackground/index';
 import Nav from './Components/Nav/index';
@@ -18,22 +18,20 @@ const socket = io.connect('localhost:8080');
 
 const THRESHOLD = 253555;
 const MSGDECODE = '[[!@#$%^&* ($.--$---$-.$....$.$.$) !@#$%^&*]]';
-
 let connections = {};
 
 const worker = new Worker('../Worker.js');
 
 const App = () => {
 
+	const setConnections = (value) => {
+		connections = value;
+	}
+
 	const [message, setMessage] = useState('')
 	const [messageReceived, setMessageReceived] = useState(false);
 	const [fileReceived, setFileReceived] = useState(false);
 	const [menuOpen, setMenuOpen] = useState(false);
-	// const [connections, setConnections] = useState({});
-
-	const setConnections = (value) => {
-		connections = value;
-	}
 
 	const [nearby, setNearby] = useState([]);
 	const [progress, setProgress] = useState({});
@@ -71,38 +69,14 @@ const App = () => {
 	const onConnectRTC = (calleeID) => {
 		createPeer(calleeID)
 		const newPeer = connections[calleeID].rtc;
+		const newChannel = connections[calleeID].channel;
 
 		newPeer.onicecandidate = iceEvent;
 		newPeer.onnegotiationneeded = () => negotiationEvent(calleeID);
 
-		const newChannel = newPeer.createDataChannel('main')
-
 		newChannel.bufferedAmountLowThreshold = THRESHOLD;
 		newChannel.onmessage = handleReceivingData;
-
-		setConnections({...connections, [calleeID]: {
-			rtc: newPeer,
-			channel: newChannel,
-		}})
 	}
-
-	// useEffect(() => {
-	// 	if (Object.keys(connections).length === 0) {
-	// 		return
-	// 	} else {
-	// 		const calleeID = otherRef.current;
-			
-	// 		const newPeer = connections[calleeID].rtc;
-	// 		const newChannel = connections[calleeID].channel;
-
-	// 		newPeer.onicecandidate = iceEvent;
-	// 		newPeer.onnegotiationneeded = () => negotiationEvent(calleeID);
-
-	// 		newChannel.bufferedAmountLowThreshold = THRESHOLD;
-	// 		newChannel.onmessage = handleReceivingData;
-	// 	}
-
-	// }, [connections])
 
 	const createPeer = (calleeID) => {
 		otherRef.current = calleeID;
@@ -116,8 +90,11 @@ const App = () => {
 			iceCandidatePoolSize: 10,
 		});
 
+		const newChannel = newRTC.createDataChannel('main');
+
 		setConnections({...connections, [calleeID]: {
 			rtc: newRTC,
+			channel: newChannel,
 		}})
 	}
 
@@ -259,12 +236,15 @@ const App = () => {
 		}
 	}
 
+	const reject = () => {
+		setFileReceived(false);
+		worker.postMessage('reject');
+	}
+
 	const sendFile = (calleeID, file) => {
 		const channel = connections[calleeID].channel
 		const chunkSize = THRESHOLD;
 		const currentFile = file;
-
-		console.log('filesize', currentFile.size)
 
 		currentFile.arrayBuffer().then((buffer) => {
 
@@ -359,7 +339,7 @@ const App = () => {
                 >
                 {fileReceived && <DownloadCard handleClose={(e) => {
 					e.preventDefault();
-				}} value={recentSender} download={download}/>}
+				}} value={recentSender} download={download} reject={reject}/>}
                 </AnimatePresence>
             </div>
 

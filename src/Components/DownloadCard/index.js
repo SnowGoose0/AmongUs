@@ -23,7 +23,7 @@ const dropIn = {
     },
 };
 
-const DownloadCard = ({ handleClose, value, download }) => {
+const DownloadCard = ({ handleClose, value, download, reject }) => {
 
     return (
         <Backdrop onClick={handleClose}>
@@ -37,13 +37,16 @@ const DownloadCard = ({ handleClose, value, download }) => {
             >   
                 <motion.h1>Message Received</motion.h1>
                 <motion.div className='received-message'>
-                    <motion.p>{value}</motion.p>
+                    <motion.p><span>{value}</span> wants to send you a file</motion.p>
                 </motion.div>
                 <motion.div className='message-card-buttons'>
-                    <motion.button onClick={handleClose} className='button message-card-close'>CLOSE</motion.button>
                     <motion.button onClick={(e) => {
-                        download()
-                        handleClose(e)
+                        reject();
+                        handleClose(e);
+                    }} className='button message-card-close'>DECLINE</motion.button>
+                    <motion.button onClick={(e) => {
+                        download();
+                        handleClose(e);
                     }} className='button message-card-copy'>DOWNLOAD</motion.button>
                 </motion.div>
             </motion.div>

@@ -4,7 +4,7 @@
 
 .message-card h1 {
   font-size: 22px;
-  padding: 0.5em 0em 0.1em 0em;
+  padding: 0.75em 0em 0.1em 0em;
   font-weight: 550;
 }
 .message-card p {
@@ -13,8 +13,12 @@
 }
 .message-card .received-message {
   padding-top: 1em;
+  font-size: 0.8em;
   font-style: italic;
   overflow: auto;
+}
+.message-card .received-message span {
+  text-decoration: underline;
 }
 .message-card ::-webkit-scrollbar {
   height: 5px;
