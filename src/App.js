@@ -40,8 +40,6 @@ const App = () => {
 	const selfRef = useRef('');
 	const aliasRef = useRef('');
 	const otherRef = useRef('');
-	const peerRef = useRef({});
-	const channelRef = useRef();
 	const fileNameRef = useRef('');
 
 	useEffect(() => {
@@ -73,19 +71,19 @@ const App = () => {
 
 		createPeer(calleeID);
 
-		peerRef.current = connections[calleeID].rtc;
+		const newPeer = connections[calleeID].rtc;
 
-		connections[calleeID].rtc.onicecandidate = iceEvent;
-		connections[calleeID].rtc.onnegotiationneeded = () => negotiationEvent(calleeID);
+		newPeer.onicecandidate = iceEvent;
+		newPeer.onnegotiationneeded = () => negotiationEvent(calleeID);
 
-		channelRef.current = connections[calleeID].rtc.createDataChannel('main');
+		const newChannel = newPeer.createDataChannel('main')
 
-		channelRef.current.bufferedAmountLowThreshold = THRESHOLD;
-		channelRef.current.onmessage = handleReceivingData;
+		newChannel.bufferedAmountLowThreshold = THRESHOLD;
+		newChannel.onmessage = handleReceivingData;
 
 		setConnections({...connections, [calleeID]: {
-			rtc: peerRef.current,
-			channel: channelRef.current,
+			rtc: newPeer,
+			channel: newChannel,
 		}})
 	}
 
@@ -128,20 +126,20 @@ const App = () => {
 		createPeer(offer.caller);
 		otherRef.current = offer.caller;
 
-		peerRef.current = connections[offer.caller].rtc;
-		peerRef.current.ondatachannel = (e) => {
-			channelRef.current = e.channel;
-			// channelRef.current.onmessage =  handleReceivingMessage;
-			channelRef.current.onmessage = handleReceivingData;
-			channelRef.current.bufferedAmountLowThreshold = THRESHOLD;
+		const newPeer = connections[offer.caller].rtc;
+		newPeer.ondatachannel = (e) => {
+			const newChannel = e.channel;
+			newChannel.onmessage = handleReceivingData;
+			newChannel.bufferedAmountLowThreshold = THRESHOLD;
 
 			setConnections({...connections, [offer.caller]: {
-				rtc: peerRef.current,
-				channel: channelRef.current,
+				rtc: newPeer,
+				channel: newChannel,
 			}})
 		}
 
 		const desc = new RTCSessionDescription(offer.sdp);
+		
 		await connections[offer.caller].rtc.setRemoteDescription(desc);
 		
 		const ans = await connections[offer.caller].rtc.createAnswer();
@@ -182,7 +180,6 @@ const App = () => {
 	}
 
 	const sendMessage = (msg, calleeID) => {
-		// channelRef.current.send(msg);
 		connections[calleeID].channel.send(MSGDECODE + msg);
 	}
 
@@ -260,19 +257,10 @@ const App = () => {
 
 		currentFile.arrayBuffer().then((buffer) => {
 
-			// while(buffer.byteLength) {
-			// 	const chunk = buffer.slice(0, chunkSize);
-			// 	buffer = buffer.slice(chunkSize, buffer.byteLength);
-			// 	channel.send(chunk)
-			// 	setProgress((currentFile.size - buffer.byteLength) / currentFile.size);
-			// }
-
 			const send = () => {
 				while (buffer.byteLength) {
-					// console.log('thresh', channel.bufferedAmountLowThreshold)
 					if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
 						channel.onbufferedamountlow = () => {
-							// console.log('event');
 							channel.onbufferedamountlow = null;
 							send();
 						};
@@ -324,7 +312,6 @@ const App = () => {
 								prog={progress[value.id]}
 								setProg={setProgress}
 							/>
-							{fileReceived && <button onClick={download}>Download</button>}
 						</Recipient>
 						</div> )
 				})}
@@ -337,7 +324,6 @@ const App = () => {
 				exit={{ opacity: 0, scale: 0.9 }}
 				transition={{ delay: 1, duration: 1 }}
 			>
-				{/* <p>You are known as: {selfRef.current.slice(0, 5)}</p> */}
 				<p>You are known as: {aliasRef.current}</p>
 			</motion.div>
 

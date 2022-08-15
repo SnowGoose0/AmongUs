@@ -13,7 +13,6 @@ const InfoPage = ({ menuOpen, setMenuOpen }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-
                     transition = {{ duration: 1 }}
                 >
                     <motion.div className='info-page'>
@@ -30,7 +29,6 @@ const InfoPage = ({ menuOpen, setMenuOpen }) => {
                                         delayCustom={1}
                                         showIcon={menuOpen}
                                     />
-
                                     <div className='info-box-container'>
                                         <motion.div
                                             className='info-box'
