@@ -4,7 +4,7 @@
   left: 0;
   height: 100%;
   width: 100%;
-  background: black;
+  background: rgb(1, 20, 22);
 }
 
 .info-box-container {
@@ -21,4 +21,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.info-box-container .info-box .icon {
+  width: 50px;
 }/*# sourceMappingURL=index.css.map */

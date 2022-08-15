@@ -82,17 +82,11 @@ const App = () => {
 
 		channelRef.current.bufferedAmountLowThreshold = THRESHOLD;
 		channelRef.current.onmessage = handleReceivingData;
-		channelRef.current.onclose = () => handleChannelClose(calleeID);
 
 		setConnections({...connections, [calleeID]: {
 			rtc: peerRef.current,
 			channel: channelRef.current,
 		}})
-	}
-
-	const handleReceivingMessage = (e) => {
-		setMessage(e.data);
-		setMessageReceived(true);
 	}
 
 	const createPeer = (calleeID) => {
@@ -192,23 +186,6 @@ const App = () => {
 		connections[calleeID].channel.send(MSGDECODE + msg);
 	}
 
-	const handleChannelClose = (calleeID) => {
-		try {
-			connections[calleeID].rtc.close();
-			delete connections[calleeID];
-		// socket.emit('close-channel', {callee: calleeID});
-		} catch(e) {
-			console.log('Already Disconnected')
-		}
-	}
-
-	const disconnectRTC = (incoming) => {
-		// peerRef.current.close();
-		console.log(incoming.id)
-		// setConnection({connection: false, peerID: 'NONE'});
-	}
-
-
 	socket.off('user-joined').on('user-joined', onConnectRTC)
 
 	socket.off('offer-connection').on('offer-connection', handleOffer);
@@ -217,36 +194,48 @@ const App = () => {
 
 	socket.off('ice-candidate').on('ice-candidate', newIceCandidate);
 
-	socket.off('close-channel').on('close-channel', disconnectRTC);
-
 	socket.on('get-self', (currentSelf) => {
 		selfRef.current = currentSelf;
 	})
 
 	socket.on('nearby-users', (nearbyUsers) => {
-		setNearby(nearbyUsers);
-
 		nearbyUsers.forEach((user) => {
 			if (user.id === selfRef.current) {
 				aliasRef.current = user.alias;
 			}
 		})
+
+		setNearby(nearbyUsers);
 	})
 
-	console.log(connections)
+	socket.off('disconnect-rtc').on('disconnect-rtc', (nearbyUsers) => {
+		const nearbyUsersID = nearbyUsers.map(user => user.id)
+
+		nearby.forEach(user => {
+			if (!(nearbyUsersID.includes(user.id))) {
+				connections[user.id].rtc.close()
+				const connectionsCopy = connections;
+				delete connectionsCopy[user.id]
+				setConnections(connectionsCopy);
+			}
+		})
+	})
 
 	const [recentSender, setRecentSender] = useState('')
 
 	const handleReceivingData = (e) => {
+
 		if (typeof(e.data) === 'string' && e.data.includes(MSGDECODE)){
 			const decodedMessage = e.data.slice(MSGDECODE.length);
 			setMessage(decodedMessage);
 			setMessageReceived(true);
+
 		} else if (e.data.toString().includes("done")) {
 			setFileReceived(true);
 			const parsed = JSON.parse(e.data);
 			fileNameRef.current = parsed.fileName;
 			setRecentSender(parsed.sender);
+
 		} else {
 			worker.postMessage(e.data);
 		}
@@ -255,18 +244,19 @@ const App = () => {
 	const download = () => {
 		setFileReceived(false);
 		worker.postMessage('download');
-		worker.addEventListener('message', (e) => {
+		worker.onmessage = (e) => {
 			const stream = e.data.stream();
 			const fileStream = streamSaver.createWriteStream(fileNameRef.current);
 			stream.pipeTo(fileStream);
-
-		})
+		}
 	}
 
 	const sendFile = (calleeID, file) => {
 		const channel = connections[calleeID].channel
 		const chunkSize = THRESHOLD;
 		const currentFile = file;
+
+		console.log('filesize', currentFile.size)
 
 		currentFile.arrayBuffer().then((buffer) => {
 
@@ -279,10 +269,10 @@ const App = () => {
 
 			const send = () => {
 				while (buffer.byteLength) {
-					console.log('thresh', channel.bufferedAmountLowThreshold)
+					// console.log('thresh', channel.bufferedAmountLowThreshold)
 					if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
 						channel.onbufferedamountlow = () => {
-							console.log('event');
+							// console.log('event');
 							channel.onbufferedamountlow = null;
 							send();
 						};
@@ -390,7 +380,6 @@ const App = () => {
 					</motion.div>
 				</AnimatePresence>
 			)}
-
 
 			<InfoPage
 				menuOpen={menuOpen}

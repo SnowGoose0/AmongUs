@@ -1,14 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { AnimatePresence, motion } from 'framer-motion';
-import MessagePrompt from '../MessagePrompt/index'
-import './index.css'
+import MessagePrompt from '../MessagePrompt/index';
+import './index.css';
 
 const Avatar = ({ send, recipient, avatar64, sendFile, prog }) => {
     const [messagePrompt, setMessagePrompt] = useState(false);
     const [progress, setProgress] = useState(0);
     const [file, setFile] = useState();
-
-    const chooseFile = useRef();
 
     const selectFile = (e) => {
 		if (e.target.files[0]) {
@@ -16,11 +15,22 @@ const Avatar = ({ send, recipient, avatar64, sendFile, prog }) => {
 			console.log(e.target.files[0].size)
 		}
 	}
+    
+    const {getRootProps, getInputProps} = useDropzone({
+        onDrop: (acceptedFiles) => {
+            sendFile(recipient.id, acceptedFiles[0]);
+        },
+
+        disabled: (progress > 0 && progress < 1) ? true : false,
+
+        maxFiles: 1,
+    });
 
     useEffect(() => {
         if (file) {
             sendFile(recipient.id, file)
         }
+        console.log(file);
     }, [file])
 
     useEffect(() => {
@@ -44,8 +54,7 @@ const Avatar = ({ send, recipient, avatar64, sendFile, prog }) => {
     
     return (
         <div>
-            <input type="file" ref={chooseFile} className='hidden' onChange={selectFile}/>
-            <div onClick={() => {chooseFile.current.click()}} onContextMenu={(e) => handleMessagePrompt(e)} className='client-container'>
+            <div onContextMenu={(e) => handleMessagePrompt(e)} className='client-container'>
                 <motion.div
                     style={progressGradient}
                     className={(progress === 1.1 || Math.floor(progress * 100) === 0) ? 'progress hidden' : 'progress'}
@@ -61,8 +70,11 @@ const Avatar = ({ send, recipient, avatar64, sendFile, prog }) => {
                 >
                     <motion.div 
                         className='avatar-container blend-background'
+                        {...getRootProps()}
                     >
+                        <input {...getInputProps()} />
                         <motion.img 
+                            title={recipient.id.slice(0, 5)}
                             src={avatar64}
                             className='recipient-icon-motion'
                             initial={{ scale: 0 }}

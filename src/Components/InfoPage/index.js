@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Nav from '../Nav/index';
 import './index.css'
 import closeIcon from '../../Assets/close.png';
+import githubIcon from '../../Assets/github.png';
 
 const InfoPage = ({ menuOpen, setMenuOpen }) => {
 
@@ -34,7 +35,19 @@ const InfoPage = ({ menuOpen, setMenuOpen }) => {
                                         <motion.div
                                             className='info-box'
                                         >
-                                            <motion.h2>Hello World</motion.h2>
+                                            <motion.a
+                                                href='https://github.com/SnowGoose0/AmongUs-Client'
+                                                target='_blank'
+                                            >
+                                                <motion.img
+                                                    className='icon github'
+                                                    src={githubIcon}
+                                                    alt='Github link'
+                                                    initial={{ opacity: 0, scale: 0 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ delay: .5, type: 'spring', duration: 1, bounce: 0.25 }}
+                                                />
+                                            </motion.a>
                                         </motion.div>
                                     </div>
                                 </motion.div>
